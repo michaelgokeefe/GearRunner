@@ -1,0 +1,415 @@
+==== //depot/unity5/virzoom_sdk/Assets/VZ/Scripts/core/VZController.cs#36 - c:\dev\unity5\virzoom_sdk\Assets\VZ\Scripts\core\VZController.cs ====
+5,6d4
+< //#define VZ_EMULATE_GEARVR
+< 
+114a113,125
+> #if UNITY_ANDROID
+>    public void ForceController()
+>    {
+>       mBikeState.Type = 0;
+>       mBikeState.Connected = false;
+>    }
+> 
+>    public void SetEricBike()
+>    {
+>       mBikeState.BetaVersion = 0;
+>    }
+> #endif
+> 
+130c141
+<    public void Recenter()
+---
+>    public virtual void Recenter()
+181c192
+< #if VZ_EMULATE_GEARVR
+---
+> #if UNITY_ANDROID && !UNITY_EDITOR
+197c208
+< #elif VZ_GAME
+---
+> #elif VZ_GAME && !UNITY_ANDROID 
+308c319
+< #if VZ_EMULATE_GEARVR
+---
+> #if UNITY_ANDROID
+448c459
+< #if VZ_GAME
+---
+> #if VZ_GAME && !UNITY_ANDROID
+474c485
+< #if VZ_GAME
+---
+> #if VZ_GAME && !UNITY_ANDROID
+513a525
+> #if !UNITY_ANDROID || UNITY_EDITOR
+514a527
+> #endif
+522c535
+<       if (mController.Name == "Keyboard" || !mHasHmd)
+---
+>       if (mController.Name == "Gvr" || mController.Name == "Keyboard" || !mHasHmd)
+596a610,623
+> #if UNITY_ANDROID
+>    float MakeAxis(float neg, float pos, float multiplier)
+>    {
+>       float axis = 0;
+> 
+>       if (pos > neg)
+>          axis = pos;
+>       else
+>          axis = -neg;
+> 
+>       return axis * multiplier;
+>    }
+> #endif
+> 
+636c663
+< #if VZ_GAME
+---
+> #if VZ_GAME && !UNITY_ANDROID
+726a754,778
+> #if UNITY_ANDROID && UNITY_EDITOR
+>                float lean;
+>                float bend;
+> 
+>                if (mBikeState.Type > 0)
+>                {
+>                   // Use dpad on bike
+>                   lean = MakeAxis(mBikeState.DpadLeft ? 1 : 0, mBikeState.DpadRight ? 1 : 0, 0.15f);
+>                   bend = MakeAxis(mBikeState.DpadDown ? 1 : 0, mBikeState.DpadUp ? 1 : 0, 0.15f);
+>                }
+>                else
+>                {
+>                   // Use lean controls otherwise
+>                   lean = MakeAxis(mController.LeanLeft, mController.LeanRight, 0.15f);
+>                   bend = MakeAxis(mController.LeanBack, mController.LeanForward, 0.15f);
+>                }
+> 
+>                mControllerLean = Mathf.SmoothDamp(mControllerLean, lean, ref mControllerLeanVel, 0.1f);
+>                mControllerBend = Mathf.SmoothDamp(mControllerBend, bend, ref mControllerBendVel, 0.1f);
+> 
+>                Vector3 pos = mCamera.localPosition;
+>                pos.x = mControllerLean;
+>                pos.z = mControllerBend;
+>                mCamera.localPosition = pos;
+> #else
+733,751c785
+<             }
+< #if VZ_EMULATE_GEARVR
+<             else if (mBikeState.Type >= 0)
+<             {
+<                float lean = 0;
+<                float bend = 0;
+< 
+<                if (mBikeState.DpadLeft)
+<                   lean = -0.25f;
+<                else if (mBikeState.DpadRight)
+<                   lean = 0.25f;
+<                if (mBikeState.DpadUp)
+<                   bend = 0.25f;
+<                else if (mBikeState.DpadDown)
+<                   bend = -0.25f;
+< 
+<                mControllerLean = Mathf.SmoothDamp(mControllerLean, lean, ref mControllerLeanVel, 0.5f);
+<                mControllerBend = Mathf.SmoothDamp(mControllerBend, bend, ref mControllerBendVel, 0.5f);
+<                mCamera.localPosition = new Vector3(mControllerLean, 0, mControllerBend);
+---
+> #endif
+753d786
+< #endif
+792a826,835
+> #if UNITY_ANDROID
+>       float roll = Head.localEulerAngles.z;
+>       if (roll > 180)
+>          roll -= 360;
+>       if (roll > 20)
+>          roll = 20;
+>       else if (roll < -20)
+>          roll = -20;
+>       HeadLean = roll / 1.5f * Mathf.Deg2Rad;
+> #else
+793a837
+> #endif
+==== //depot/unity5/virzoom_sdk/Assets/VZ/Scripts/core/VZControllerMap.cs#1 - c:\dev\unity5\virzoom_sdk\Assets\VZ\Scripts\core\VZControllerMap.cs ====
+24c24
+<       public bool GetBool()
+---
+>       public virtual bool GetBool()
+32c32
+<       public float GetFloat()
+---
+>       public virtual float GetFloat()
+48a49,137
+> #if UNITY_ANDROID && !UNITY_EDITOR && UNITY_HAS_GOOGLEVR
+>    public class GvrControl : Control
+>    {
+>       public enum Action 
+>       {
+>          Forward,
+>          Reverse,
+>          X,
+>          LeftTrigger,
+>          RightTrigger,
+>          LeanLeft,
+>          LeanRight,
+>          LeanForward,
+>          LeanBack
+>       }
+> 
+>       Action mAction;
+> 
+>       public GvrControl(Action action)
+>       {
+>          mAction = action;
+>       }
+> 
+>       public override bool GetBool()
+>       {
+>          return GetFloat() != 0 ? true : false;
+>       }
+> 
+>       public override float GetFloat()
+>       {
+>          switch (mAction)
+>          {
+>             case Action.Forward:
+>             {
+>                return (GvrController.IsTouching ? 1.2f - GvrController.TouchPos.y : 0);
+>             }
+>             case Action.Reverse:
+>             {
+>                return 0;
+>             }
+>             case Action.X:
+>             {
+>                return GvrController.ClickButton ? 1 : 0;
+>             }
+>             case Action.LeftTrigger:
+>             {
+>                return GvrController.AppButton ? 1 : 0;
+>             }
+>             case Action.RightTrigger:
+>             {
+>                return GvrController.ClickButton ? 1 : 0;
+>             }
+>             case Action.LeanLeft:
+>             {
+>                float ang = GvrController.Orientation.eulerAngles.y;
+>                if (ang > 180)
+>                   ang -= 360;
+>                return Mathf.Min(1.0f, -ang / 30);
+>             }
+>             case Action.LeanRight:
+>             {
+>                float ang = GvrController.Orientation.eulerAngles.y;
+>                if (ang > 180)
+>                   ang -= 360;
+>                return Mathf.Min(1.0f, ang / 30);
+>             }
+>             case Action.LeanForward:
+>             {
+>                float ang = GvrController.Orientation.eulerAngles.x;
+>                if (ang > 180)
+>                   ang -= 360;
+>                return Mathf.Min(1.0f, ang / 30);
+>             }
+>             case Action.LeanBack:
+>             {
+>                float ang = GvrController.Orientation.eulerAngles.x;
+>                if (ang > 180)
+>                   ang -= 360;
+>                return Mathf.Min(1.0f, -ang / 30);
+>             }
+>             default:
+>             {
+>                return 0;
+>             }
+>          }
+>       }
+>    }
+> #endif
+> 
+94a184,211
+> #if UNITY_ANDROID && !UNITY_EDITOR && UNITY_HAS_GOOGLEVR
+>       controller = new Controller();
+>       controller.Name = "Gvr";
+>       controller.Description = "Gvr";
+>       controller.LeftUp = new Control();
+>       controller.LeftLeft = new Control();
+>       controller.LeftRight = new Control();
+>       controller.LeftDown = new Control();
+>       controller.RightUp = new Control();
+>       controller.RightLeft = new Control();
+>       controller.RightRight = new Control();
+>       controller.RightDown = new Control();
+>       controller.LookLeft = new Control();
+>       controller.LookRight = new Control();
+>       controller.LookUp = new Control();
+>       controller.LookDown = new Control();
+>       controller.LeftTrigger = new GvrControl(GvrControl.Action.LeftTrigger);
+>       controller.RightTrigger = new GvrControl(GvrControl.Action.RightTrigger);
+>       controller.LeanLeft = new GvrControl(GvrControl.Action.LeanLeft);
+>       controller.LeanRight = new GvrControl(GvrControl.Action.LeanRight);
+>       controller.LeanForward = new GvrControl(GvrControl.Action.LeanForward);
+>       controller.LeanBack = new GvrControl(GvrControl.Action.LeanBack);
+>       controller.X = new GvrControl(GvrControl.Action.X);
+>       controller.Forward = new GvrControl(GvrControl.Action.Forward);
+>       controller.Reverse = new GvrControl(GvrControl.Action.Reverse);
+> #endif
+> 
+> #if !UNITY_ANDROID || UNITY_EDITOR
+100c217
+< #if UNITY_PS4 && !UNITY_EDITOR
+---
+> # if UNITY_PS4 && !UNITY_EDITOR
+106c223
+< #else
+---
+> # else
+110a228,229
+> # endif
+>       }
+112d230
+<       }
+==== //depot/unity5/virzoom_sdk/Assets/VZ/Scripts/core/VZPlayer.cs#28 - c:\dev\unity5\virzoom_sdk\Assets\VZ\Scripts\core\VZPlayer.cs ====
+28a29
+>    public Transform HUD = null;
+205c206
+<       mRaycastMask = ~(LayerMask.GetMask("VZPlayerCollider") | LayerMask.GetMask("Ignore Raycast") | LayerMask.GetMask("VZObjectCollider"));
+---
+>       mRaycastMask = ~(LayerMask.GetMask("VZPlayerCollider") | LayerMask.GetMask("Ignore Raycast") | LayerMask.GetMask("VZObjectCollider") | LayerMask.GetMask("UI"));
+234a236,245
+>       // Lookup release screen
+>       Transform release = Controller.TransitionCanvas().transform.Find("Release");
+> 
+>       if (release != null)
+>          mTransitionRelease = release.GetComponent<Text>();
+> 
+>       // Attach HUD
+>       if (HUD != null)
+>          HUD.SetParent(Controller.Neck(), true); 
+> 
+286a298,300
+> 
+>          if (HUD != null)
+>             Destroy(HUD);
+480a495,514
+>       // Try connecting to bike
+>       if (Controller.BikeState().Type < 0)
+>          Controller.TryConnectBike();
+> 
+>       // Update calibration msg
+>       if (mTransitionRelease != null)
+>       {
+>          mTransitionRelease.text = kReleaseText + "\n\n\n";
+> 
+> #if !UNITY_EDITOR
+>          // Require bike outside of editor
+>          if (Controller.BikeState().Type < 0)
+>             mTransitionRelease.text += "PLUG IN DONGLE";
+>          else if (!Controller.BikeState().Connected)
+>             mTransitionRelease.text += "POWER ON BIKE";
+>          else
+> #endif
+>             mTransitionRelease.text += "HOLD L+R TO BEGIN";
+>       }
+> 
+593a628,629
+>    const string kReleaseText = "By continuing use of the VirZOOM bike controller you agree for yourself and (if applicable) members of your family to all terms and conditions of the License Agreement at virzoom.com/eula.htm";
+> 
+605a642
+>    Text mTransitionRelease = null;
+==== //depot/unity5/virzoom_sdk/Assets/VZ/Scripts/core/VZPlugin.cs#17 - c:\dev\unity5\virzoom_sdk\Assets\VZ\Scripts\core\VZPlugin.cs ====
+4a5
+> using UnityEngine;
+231c232
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+234c235
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+238c239
+< 	[DllImport("VZPlugin")]
+---
+> 	[DllImport("vzplugin")]
+241c242
+< 	[DllImport("VZPlugin")]
+---
+> 	[DllImport("vzplugin")]
+251c252
+< 	[DllImport("VZPlugin")]
+---
+> 	[DllImport("vzplugin")]
+263c264
+< 	[DllImport("VZPlugin")]
+---
+> 	[DllImport("vzplugin")]
+268c269
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+271c272
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+280c281
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+289c290
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+299c300
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+304c305
+<    [DllImport("VZPlugin")]
+---
+>    [DllImport("vzplugin")]
+313c314,315
+<    [DllImport("VZPlugin", EntryPoint="VZInit")]
+---
+> 
+>    [DllImport("vzplugin", EntryPoint="VZInit")]
+335a338,346
+> #if UNITY_ANDROID && !UNITY_EDITOR
+>       // Init bluetooth class
+>       AndroidJavaClass playerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+>       AndroidJavaObject context = playerClass.GetStatic<AndroidJavaObject>("currentActivity");
+> 
+>       AndroidJavaClass bleClass = new AndroidJavaClass("com.virzoom.ble.vzble.blueGigaBLE");
+>       bleClass.CallStatic("create", context);
+> #endif
+> 
+339c350
+<    [DllImport("VZPlugin", EntryPoint="VZResetSpeed")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZResetSpeed")]
+342c353
+<    [DllImport("VZPlugin", EntryPoint="VZResetMotion")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZResetMotion")]
+345c356
+<    [DllImport("VZPlugin", EntryPoint="VZSetTurnSettleTime")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZSetTurnSettleTime")]
+348c359
+<    [DllImport("VZPlugin", EntryPoint="VZUpdateMotion")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZUpdateMotion")]
+351c362
+<    [DllImport("VZPlugin", EntryPoint="VZConnectBike")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZConnectBike")]
+354c365
+<    [DllImport("VZPlugin", EntryPoint="VZUpdateBike")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZUpdateBike")]
+357c368
+<    [DllImport("VZPlugin", EntryPoint="VZCloseBike")]
+---
+>    [DllImport("vzplugin", EntryPoint="VZCloseBike")]
