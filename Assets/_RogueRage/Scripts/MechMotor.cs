@@ -8,7 +8,7 @@ public class MechMotor : MonoBehaviour {
     public float MaxForwardVelocity;
     public float MaxStrafeVelocity;
     public float BikeMaxLean;
-    public Transform BikeTransform;
+    //public Transform BikeTransform;
 	// Use this for initialization
 	void Start () {
 		
@@ -30,7 +30,7 @@ public class MechMotor : MonoBehaviour {
     }
     public void HandleStrafeMotion(float leanPercent) {
         float scaleFactor = (BikeVelocity / MaxForwardVelocity);
-        BikeTransform.localEulerAngles = new Vector3(BikeTransform.localEulerAngles.x, BikeTransform.localEulerAngles.y, leanPercent * BikeMaxLean *scaleFactor);
+        //BikeTransform.localEulerAngles = new Vector3(BikeTransform.localEulerAngles.x, BikeTransform.localEulerAngles.y, leanPercent * BikeMaxLean *scaleFactor);
 
 
         float strafeTranslateAmount = Time.deltaTime * leanPercent * MaxStrafeVelocity * scaleFactor;
