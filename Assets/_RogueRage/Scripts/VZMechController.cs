@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class VZBikeController : MonoBehaviour {
+public class VZMechController : MonoBehaviour {
     public MechMotor Motor;
     public MechPlayerInput PlayerInput;
     public Transform PlayerRoot;
-    public Transform BikeTransform;
+    public Transform MechTorso;
     public Camera HeadCamera;
     public Transform CameraTransform;
     public Transform CameraRigPC;
@@ -80,7 +80,7 @@ public class VZBikeController : MonoBehaviour {
         }
 
         // Attach controller to us
-        VZController.AttachPlayer(BikeTransform, HeadCamera);
+        VZController.AttachPlayer(MechTorso, HeadCamera);
 
 
     }
