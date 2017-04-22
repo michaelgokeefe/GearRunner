@@ -20,7 +20,6 @@ public class MechPlayerInput : MonoBehaviour {
     public float Yaw;
     public GameObject BikeCollisionGameObject;
     public GunLogic GunLogic;
-    public Transform[] MagBoxes;
     void Start() {
     }
 
