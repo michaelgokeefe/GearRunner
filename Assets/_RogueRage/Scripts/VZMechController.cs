@@ -39,6 +39,7 @@ public class VZMechController : MonoBehaviour {
     public static VZController VZController { get; private set; }
     public bool IsCalibrated;
     public float NeckHeight;
+    public float NeckForwardOffset;
 
     List<float> InputSpeeds = new List<float>();
     public int InputSpeedsToAverage;
@@ -96,8 +97,9 @@ public class VZMechController : MonoBehaviour {
         //    mRaycastOffset = raycastOrigin.localPosition;
         //}
 
-        // Init neck height
-        VZController.Neck().localPosition = new Vector3(0, NeckHeight, 0);
+
+
+
 
         // Lookup release screen
         Transform release = VZController.TransitionCanvas().transform.Find("Release");
@@ -132,8 +134,14 @@ public class VZMechController : MonoBehaviour {
 
         // Hold both buttons to calibrate
         if (VZController.LeftButton.Held(0.5f) && VZController.RightButton.Held(0.5f) && VZController.IsHeadTracked()) {
+
+
             VZController.LeftButton.Clear();
             VZController.RightButton.Clear();
+
+            NeckHeight = PlayerInput.transform.localPosition.y - 0.8f;
+            // Init neck height
+            VZController.Neck().localPosition = new Vector3(0, NeckHeight, NeckForwardOffset);
 
             VZController.Recenter();
 
@@ -212,11 +220,14 @@ public class VZMechController : MonoBehaviour {
         if (!IsCalibrated) {
             return;
         }
-        SpeedometerTicks++;
-        if (SpeedometerTicks > TicksUntilSpeedometerRefresh) {
-            SpeedometerTicks = 0;
-           Motor.MechDisplays.UpdateVelocityDisplay(Motor.BikeVelocity);
+        if (Motor.MechDisplays) {
+            SpeedometerTicks++;
+            if (SpeedometerTicks > TicksUntilSpeedometerRefresh) {
+                SpeedometerTicks = 0;
+                Motor.MechDisplays.UpdateVelocityDisplay(Motor.BikeVelocity);
+            }
         }
+
         InputSpeeds.Add(VZController.InputSpeed);
         if (InputSpeeds.Count >= InputSpeedsToAverage) {
             float sumSpeed = 0;
