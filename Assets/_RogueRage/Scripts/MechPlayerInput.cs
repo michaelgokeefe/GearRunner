@@ -135,7 +135,7 @@ public class MechPlayerInput : MonoBehaviour {
 
         //Debug.Log(Yaw);
         //CheckIfCanAim();
-        CompensateWithGunAngle();
+        //CompensateWithGunAngle();
         //GunDoorHingeManagement();
         //GunDoorHighlightManagement();
         //Move our Gaze Cursor
