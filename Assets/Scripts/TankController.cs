@@ -23,10 +23,11 @@ public class TankController : MonoBehaviour {
 
     void Shoot()
     {
-        Transform barrell = transform.GetChild(1).GetChild(0).transform;
-        Quaternion rot = transform.GetChild(1).transform.rotation;
+        Transform barrell = transform.GetChild(0).GetChild(0).GetChild(1).transform;  //spawn at barrell end
+        Quaternion rot = transform.GetChild(0).GetChild(0).transform.rotation;  //rotation barrell
+        rot = new Quaternion(rot.x, rot.y, rot.z + 90, rot.w);
         GameObject bullet = GameObject.Instantiate(projectile, barrell.position, rot);
-        bullet.GetComponent<Rigidbody>().AddForce(barrell.forward * projectileSpeed);
+        bullet.GetComponent<Rigidbody>().velocity = bullet.transform.forward * projectileSpeed;
     }
 
     void TargetAt(GameObject target) { }
